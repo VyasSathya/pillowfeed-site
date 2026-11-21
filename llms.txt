@@ -1,0 +1,21 @@
+# Pillowfeed
+
+> Pillowfeed is an iPhone app that plays the photos and videos you save as a private, full-screen feed you swipe through, locked with Face ID or your passcode. App Store: https://apps.apple.com/us/app/pillowfeed/id6826859140
+
+Key facts:
+- Platform: iPhone (iOS). Rated 17+ on the App Store.
+- Import from Photos, Files, the share sheet, Shortcuts ("Add to Pillowfeed"), a pasted link, or the built-in browser (tap Save on the video playing on a page). A pasted RedGIFs link saves the video.
+- Feed: swipe up for the next item, newest first or shuffled. Favorites and Super favorites, a filter for videos with sound, and albums that play as their own feed.
+- Privacy: Face ID or passcode lock, relocks after 5 minutes away, the app switcher shows a cover. No account, no ads, no tracking. The developer runs no servers.
+- Pillowfeed Pro: keeps the collection in the user's own private iCloud and removes the copies from the iPhone (Move to iCloud); videos play from iCloud when you swipe to them. Free tier holds 200 items. Pro is a monthly or yearly subscription or a one-time lifetime purchase.
+- Some streaming services cannot be saved from (YouTube, Vimeo, SoundCloud, Apple Music, Apple TV, Spotify, Netflix, Twitch).
+
+## Guides
+- [How to save RedGIFs videos on iPhone](https://pillowfeed.com/guides/save-redgifs-videos-iphone/)
+- [A TikTok-style feed of your own videos on iPhone](https://pillowfeed.com/guides/tiktok-feed-of-your-own-videos/)
+- [How to hide videos on iPhone](https://pillowfeed.com/guides/hide-videos-iphone/)
+- [Try the feed in your browser with your own files](https://pillowfeed.com/feed/)
+
+## Support
+- [Support and FAQ](https://pillowfeed.com/support/)
+- [Privacy policy](https://pillowfeed.com/privacy/)
