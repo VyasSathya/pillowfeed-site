@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pillowfeed on the web: a feed of your own videos</title>
+<meta name="description" content="Swipe through your own videos and photos full screen, one after another, like TikTok. Runs in your browser; nothing is uploaded.">
+<link rel="canonical" href="https://pillowfeed.com/feed/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="apple-itunes-app" content="app-id=6826859140">
+<style>
+:root { --bg: #fafaf9; --fg: #18191b; --muted: #737375; --line: #dededf; --accent: #255f54; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #111214; --fg: #eeeef0; --muted: #98999f; --line: #2e3035; --accent: #a9d8c4; color-scheme: dark; } }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 400 16px/1.5 Geist, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+.start { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; text-align: center; gap: 14px; }
+.start h1 { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; margin: 0; max-width: 520px; }
+.start p { color: var(--muted); margin: 0; max-width: 440px; }
+.pick { appearance: none; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font-family: inherit; font-weight: 600; font-size: 16px; line-height: 1; padding: 15px 26px; cursor: pointer; margin-top: 8px; }
+.drop { outline: 2px dashed var(--accent); outline-offset: -12px; }
+.small { font-size: 14px; color: var(--muted); }
+.small a { color: var(--accent); }
+.feed { position: fixed; inset: 0; background: #000; overflow-y: scroll; scroll-snap-type: y mandatory; display: none; }
+.feed.on { display: block; }
+.item { height: 100%; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; display: flex; align-items: center; justify-content: center; position: relative; }
+.item video, .item img { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; }
+.bar { position: fixed; top: 0; left: 0; right: 0; display: none; justify-content: space-between; align-items: center; padding: max(12px, env(safe-area-inset-top)) 16px 12px; z-index: 2; pointer-events: none; }
+.bar.on { display: flex; }
+.bar button, .bar a { pointer-events: auto; appearance: none; border: 0; background: rgba(0,0,0,.45); color: #fff; font-family: inherit; font-weight: 500; font-size: 14px; line-height: 1; padding: 9px 14px; border-radius: 999px; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.bar .left { display: flex; gap: 8px; }
+.tap { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<main class="start" id="start">
+<h1>Your own videos, as a feed</h1>
+<p>Pick videos and photos from your device and swipe through them full screen, one after another. They play in this tab and are never uploaded.</p>
+<button class="pick" id="pick" type="button">Choose videos and photos</button>
+<input id="files" type="file" accept="video/*,image/*" multiple hidden>
+<p class="small">Want it on your iPhone, locked with Face ID and kept in your own iCloud? <a href="https://apps.apple.com/us/app/pillowfeed/id6826859140?pt=127800470&amp;ct=web-feed&amp;mt=8">Pillowfeed on the App Store</a></p>
+<p class="small"><a href="../guides/">Guides</a></p>
+</main>
+<div class="bar" id="bar">
+<div class="left"><button type="button" id="close">Close</button><button type="button" id="order">Shuffle</button></div>
+<a href="https://apps.apple.com/us/app/pillowfeed/id6826859140?pt=127800470&amp;ct=web-feed-bar&amp;mt=8">Get the app</a>
+</div>
+<div class="feed" id="feed"></div>
+<script>
+(function () {
+  var pick = document.getElementById('pick'), input = document.getElementById('files');
+  var start = document.getElementById('start'), feed = document.getElementById('feed'), bar = document.getElementById('bar');
+  var orderBtn = document.getElementById('order'), urls = [], files = [], shuffled = false, soundOn = false;
+  pick.onclick = function () { input.click(); };
+  input.onchange = function () { open(Array.prototype.slice.call(input.files)); input.value = ''; };
+  start.addEventListener('dragover', function (e) { e.preventDefault(); start.classList.add('drop'); });
+  start.addEventListener('dragleave', function () { start.classList.remove('drop'); });
+  start.addEventListener('drop', function (e) { e.preventDefault(); start.classList.remove('drop'); open(Array.prototype.slice.call(e.dataTransfer.files)); });
+  function media(f) { return /^(video|image)\//.test(f.type); }
+  function open(list) {
+    files = list.filter(media);
+    if (!files.length) return;
+    files.sort(function (a, b) { return b.lastModified - a.lastModified; });
+    shuffled = false; orderBtn.textContent = 'Shuffle';
+    render();
+    start.style.display = 'none'; feed.classList.add('on'); bar.classList.add('on');
+  }
+  function render() {
+    urls.forEach(URL.revokeObjectURL); urls = [];
+    feed.innerHTML = ''; feed.scrollTop = 0;
+    files.forEach(function (f) {
+      var u = URL.createObjectURL(f); urls.push(u);
+      var box = document.createElement('section'); box.className = 'item';
+      var el;
+      if (f.type.indexOf('video/') === 0) {
+        el = document.createElement('video'); el.src = u; el.loop = true; el.playsInline = true; el.muted = true; el.preload = 'none';
+        var tap = document.createElement('div'); tap.className = 'tap';
+        tap.onclick = function () { soundOn = !soundOn; el.muted = !soundOn; if (el.paused) el.play(); };
+        box.appendChild(el); box.appendChild(tap);
+      } else {
+        el = document.createElement('img'); el.src = u; el.alt = ''; el.loading = 'lazy';
+        box.appendChild(el);
+      }
+      feed.appendChild(box);
+    });
+    watch();
+  }
+  var io;
+  function watch() {
+    if (io) io.disconnect();
+    io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        var v = e.target.querySelector('video'); if (!v) return;
+        if (e.isIntersecting && v.preload !== 'auto') v.preload = 'auto';
+        if (e.intersectionRatio > 0.6) { v.muted = !soundOn; v.play().catch(function () { v.muted = true; v.play().catch(function () {}); }); } else { v.pause(); }
+      });
+    }, { root: feed, threshold: [0, 0.6, 1] });
+    Array.prototype.forEach.call(feed.children, function (c) { io.observe(c); });
+  }
+  orderBtn.onclick = function () {
+    shuffled = !shuffled;
+    if (shuffled) { for (var i = files.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = files[i]; files[i] = files[j]; files[j] = t; } orderBtn.textContent = 'Newest'; }
+    else { files.sort(function (a, b) { return b.lastModified - a.lastModified; }); orderBtn.textContent = 'Shuffle'; }
+    render();
+  };
+  document.getElementById('close').onclick = function () {
+    if (io) io.disconnect(); urls.forEach(URL.revokeObjectURL); urls = []; feed.innerHTML = '';
+    feed.classList.remove('on'); bar.classList.remove('on'); start.style.display = '';
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!feed.classList.contains('on')) return;
+    if (e.key === 'ArrowDown' || e.key === 'j') { feed.scrollBy({ top: feed.clientHeight, behavior: 'smooth' }); e.preventDefault(); }
+    if (e.key === 'ArrowUp' || e.key === 'k') { feed.scrollBy({ top: -feed.clientHeight, behavior: 'smooth' }); e.preventDefault(); }
+    if (e.key === 'Escape') document.getElementById('close').click();
+  });
+})();
+</script>
+</body>
+</html>
